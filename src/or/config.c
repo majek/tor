@@ -171,7 +171,7 @@ static config_var_t option_vars_[] = {
   V(CircuitStreamTimeout,        INTERVAL, "0"),
   V(CircuitPriorityHalflife,     DOUBLE,  "-100.0"), /*negative:'Use default'*/
   V(ClientDNSRejectInternalAddresses, BOOL,"1"),
-  V(ClientOnly,                  BOOL,     "0"),
+  OBSOLETE("ClientOnly"),
   V(ClientPreferIPv6ORPort,      BOOL,     "0"),
   V(ClientRejectInternalAddresses, BOOL,   "1"),
   V(ClientTransportPlugin,       LINELIST, NULL),
@@ -2499,9 +2499,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
   if (options->AuthoritativeDir && !options->ORPort_set)
     REJECT("Running as authoritative directory, but no ORPort set.");
 
-  if (options->AuthoritativeDir && options->ClientOnly)
-    REJECT("Running as authoritative directory, but ClientOnly also set.");
-
   if (options->FetchDirInfoExtraEarly && !options->FetchDirInfoEarly)
     REJECT("FetchDirInfoExtraEarly requires that you also set "
            "FetchDirInfoEarly");
@@ -3437,7 +3434,6 @@ options_transition_affects_workers(const or_options_t *old_options,
       old_options->ServerDNSSearchDomains !=
                                        new_options->ServerDNSSearchDomains ||
       old_options->SafeLogging_ != new_options->SafeLogging_ ||
-      old_options->ClientOnly != new_options->ClientOnly ||
       public_server_mode(old_options) != public_server_mode(new_options) ||
       !config_lines_eq(old_options->Logs, new_options->Logs) ||
       old_options->LogMessageDomains != new_options->LogMessageDomains)
@@ -3468,7 +3464,6 @@ options_transition_affects_descriptor(const or_options_t *old_options,
                        new_options->ORPort_lines) ||
       !config_lines_eq(old_options->DirPort_lines,
                        new_options->DirPort_lines) ||
-      old_options->ClientOnly != new_options->ClientOnly ||
       old_options->DisableNetwork != new_options->DisableNetwork ||
       old_options->PublishServerDescriptor_ !=
         new_options->PublishServerDescriptor_ ||
@@ -5551,7 +5546,7 @@ parse_ports(or_options_t *options, int validate_only,
       goto err;
     }
   }
-  if (! options->ClientOnly) {
+  {
     if (parse_port_config(ports,
                           options->ORPort_lines, options->ORListenAddress,
                           "OR", CONN_TYPE_OR_LISTENER,

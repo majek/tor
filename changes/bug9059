@@ -1,0 +1,2 @@
+  o Minor features:
+    - Deprecate ClientOnly configuration option - it was meaningless. Fix #9059.

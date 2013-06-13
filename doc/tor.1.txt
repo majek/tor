@@ -655,14 +655,6 @@ The following options are useful only for clients (that is, if
     If your network is particularly slow, you might want to set this to a
     number like 60. (Default: 0)
 
-**ClientOnly** **0**|**1**::
-    If set to 1, Tor will under no circumstances run as a relay or serve
-    directory requests. This config option is mostly meaningless: we
-    added it back when we were considering having Tor clients auto-promote
-    themselves to being relays if they were stable and fast enough. The
-    current behavior is simply that Tor is a client unless ORPort or
-    DirPort are configured. (Default: 0)
-
 **ExcludeNodes** __node__,__node__,__...__::
     A list of identity fingerprints, nicknames, country codes and address
     patterns of nodes to avoid when building a circuit.

@@ -1338,7 +1338,6 @@ authdir_mode_bridge(const or_options_t *options)
 int
 server_mode(const or_options_t *options)
 {
-  if (options->ClientOnly) return 0;
   /* XXXX024 I believe we can kill off ORListenAddress here.*/
   return (options->ORPort_set || options->ORListenAddress);
 }
@@ -1402,8 +1401,6 @@ proxy_mode(const or_options_t *options)
 }
 
 /** Decide if we're a publishable server. We are a publishable server if:
- * - We don't have the ClientOnly option set
- * and
  * - We have the PublishServerDescriptor option set to non-empty
  * and
  * - We have ORPort set
@@ -1416,8 +1413,6 @@ decide_if_publishable_server(void)
 {
   const or_options_t *options = get_options();
 
-  if (options->ClientOnly)
-    return 0;
   if (options->PublishServerDescriptor_ == NO_DIRINFO)
     return 0;
   if (!server_mode(options))
