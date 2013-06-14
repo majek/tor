@@ -1,0 +1,4 @@
+  o Code simplification and refactoring:
+    - Remove potentially confusing warning: "A consensus needs 5 good
+      signatures from recognized authorities for us to accept it [...]".
+      Fix #7216.
