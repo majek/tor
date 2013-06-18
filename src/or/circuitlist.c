@@ -371,15 +371,6 @@ circuit_set_state(circuit_t *circ, uint8_t state)
   circ->state = state;
 }
 
-/** Add <b>circ</b> to the global list of circuits. This is called only from
- * within circuit_new.
- */
-static void
-circuit_add(circuit_t *circ)
-{
-  TOR_LIST_INSERT_HEAD(&global_circuitlist, circ, head);
-}
-
 /** Append to <b>out</b> all circuits in state CHAN_WAIT waiting for
  * the given connection. */
 void
@@ -663,7 +654,7 @@ init_circuit_base(circuit_t *circ)
   circ->package_window = circuit_initial_package_window();
   circ->deliver_window = CIRCWINDOW_START;
 
-  circuit_add(circ);
+  TOR_LIST_INSERT_HEAD(&global_circuitlist, circ, head);
 }
 
 /** Allocate space for a new circuit, initializing with <b>p_circ_id</b>
@@ -723,8 +714,6 @@ circuit_free(circuit_t *circ)
   if (!circ)
     return;
 
-  TOR_LIST_REMOVE(circ, head);
-
   if (CIRCUIT_IS_ORIGIN(circ)) {
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
     mem = ocirc;
@@ -782,6 +771,8 @@ circuit_free(circuit_t *circ)
 
   extend_info_free(circ->n_hop);
   tor_free(circ->n_chan_create_cell);
+
+  TOR_LIST_REMOVE(circ, head);
 
   /* Remove from map. */
   circuit_set_n_circid_chan(circ, 0, NULL);
