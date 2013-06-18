@@ -954,51 +954,6 @@ circuit_dump_chan_details(int severity,
   }
 }
 
-/** Log, at severity <b>severity</b>, information about each circuit
- * that is connected to <b>chan</b>.
- */
-void
-circuit_dump_by_chan(channel_t *chan, int severity)
-{
-  circuit_t *circ;
-
-  tor_assert(chan);
-
-  TOR_LIST_FOREACH(circ, &global_circuitlist, head) {
-    circid_t n_circ_id = circ->n_circ_id, p_circ_id = 0;
-
-    if (circ->marked_for_close) {
-      continue;
-    }
-
-    if (!CIRCUIT_IS_ORIGIN(circ)) {
-      p_circ_id = TO_OR_CIRCUIT(circ)->p_circ_id;
-    }
-
-    if (! CIRCUIT_IS_ORIGIN(circ) && TO_OR_CIRCUIT(circ)->p_chan &&
-        TO_OR_CIRCUIT(circ)->p_chan == chan) {
-      circuit_dump_chan_details(severity, circ, chan, "App-ward",
-                                p_circ_id, n_circ_id);
-    }
-
-    if (circ->n_chan && circ->n_chan == chan) {
-      circuit_dump_chan_details(severity, circ, chan, "Exit-ward",
-                                n_circ_id, p_circ_id);
-    }
-
-    if (!circ->n_chan && circ->n_hop &&
-        channel_matches_extend_info(chan, circ->n_hop) &&
-        tor_memeq(chan->identity_digest,
-                  circ->n_hop->identity_digest, DIGEST_LEN)) {
-      circuit_dump_chan_details(severity, circ, chan,
-                                (circ->state == CIRCUIT_STATE_OPEN &&
-                                 !CIRCUIT_IS_ORIGIN(circ)) ?
-                                "Endpoint" : "Pending",
-                                n_circ_id, p_circ_id);
-    }
-  }
-}
-
 /** Return the circuit whose global ID is <b>id</b>, or NULL if no
  * such circuit exists. */
 origin_circuit_t *
