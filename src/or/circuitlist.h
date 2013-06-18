@@ -12,13 +12,14 @@
 #ifndef TOR_CIRCUITLIST_H
 #define TOR_CIRCUITLIST_H
 
-circuit_t * circuit_get_global_list_(void);
+TOR_LIST_HEAD(global_circuitlist_s, circuit_t);
+
+struct global_circuitlist_s* circuit_get_global_list_(void);
 const char *circuit_state_to_string(int state);
 const char *circuit_purpose_to_controller_string(uint8_t purpose);
 const char *circuit_purpose_to_controller_hs_state_string(uint8_t purpose);
 const char *circuit_purpose_to_string(uint8_t purpose);
 void circuit_dump_by_conn(connection_t *conn, int severity);
-void circuit_dump_by_chan(channel_t *chan, int severity);
 void circuit_set_p_circid_chan(or_circuit_t *circ, circid_t id,
                                channel_t *chan);
 void circuit_set_n_circid_chan(circuit_t *circ, circid_t id,
