@@ -1597,7 +1597,7 @@ circuits_handle_oom(size_t current_allocation)
 
   /* This algorithm itself assumes that you've got enough memory slack
    * to actually run it. */
-  for (circ = global_circuitlist; circ; circ = circ->next)
+  TOR_LIST_FOREACH(circ, &global_circuitlist, head)
     smartlist_add(circlist, circ);
 
   /* This is O(n log n); there are faster algorithms we could use instead.
