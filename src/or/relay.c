@@ -58,7 +58,9 @@ static void adjust_exit_policy_from_exitpolicy_failure(origin_circuit_t *circ,
                                                   entry_connection_t *conn,
                                                   node_t *node,
                                                   const tor_addr_t *addr);
+#if 0
 static int get_max_middle_cells(void);
+#endif
 
 /** Stop reading on edge connections when we have this many cells
  * waiting on the appropriate queue. */
@@ -2037,7 +2039,7 @@ circuit_consider_sending_sendme(circuit_t *circ, crypt_path_t *layer_hint)
 #endif
 
 /** The total number of cells we have allocated from the memory pool. */
-static int total_cells_allocated = 0;
+static size_t total_cells_allocated = 0;
 
 /** A memory pool to allocate packed_cell_t objects. */
 static mp_pool_t *cell_pool = NULL;
@@ -2117,7 +2119,7 @@ dump_cell_pool_usage(int severity)
   }
   tor_log(severity, LD_MM,
           "%d cells allocated on %d circuits. %d cells leaked.",
-          n_cells, n_circs, total_cells_allocated - n_cells);
+          n_cells, n_circs, (int)total_cells_allocated - n_cells);
   mp_pool_log_status(cell_pool, severity);
 }
 
@@ -2223,6 +2225,29 @@ cell_queue_pop(cell_queue_t *queue)
   }
   --queue->n;
   return cell;
+}
+
+/** Return the total number of bytes used for each packed_cell in a queue.
+ * Approximate. */
+size_t
+packed_cell_mem_cost(void)
+{
+  return sizeof(packed_cell_t) + MP_POOL_ITEM_OVERHEAD +
+    get_options()->CellStatistics ?
+    (sizeof(insertion_time_elem_t)+MP_POOL_ITEM_OVERHEAD) : 0;
+}
+
+/** Check whether we've got too much space used for cells.  If so,
+ * call the OOM handler and return 1.  Otherwise, return 0. */
+static int
+cell_queues_check_size(void)
+{
+  size_t alloc = total_cells_allocated * packed_cell_mem_cost();
+  if (alloc >= get_options()->MaxMemInCellQueues) {
+    circuits_handle_oom(alloc);
+    return 1;
+  }
+  return 0;
 }
 
 /**
@@ -2473,6 +2498,7 @@ channel_flush_from_first_active_circuit(channel_t *chan, int max)
   return n_flushed;
 }
 
+#if 0
 /** Indicate the current preferred cap for middle circuits; zero disables
  * the cap.  Right now it's just a constant, ORCIRC_MAX_MIDDLE_CELLS, but
  * the logic in append_cell_to_circuit_queue() is written to be correct
@@ -2484,6 +2510,7 @@ get_max_middle_cells(void)
 {
   return ORCIRC_MAX_MIDDLE_CELLS;
 }
+#endif
 
 /** Add <b>cell</b> to the queue of <b>circ</b> writing to <b>chan</b>
  * transmitting in <b>direction</b>. */
@@ -2495,7 +2522,9 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   or_circuit_t *orcirc = NULL;
   cell_queue_t *queue;
   int streams_blocked;
+#if 0
   uint32_t tgt_max_middle_cells, p_len, n_len, tmp, hard_max_middle_cells;
+#endif
 
   if (circ->marked_for_close)
     return;
@@ -2509,6 +2538,10 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
     streams_blocked = circ->streams_blocked_on_p_chan;
   }
 
+  /*
+   * Disabling this for now because of a possible guard discovery attack
+   */
+#if 0
   /* Are we a middle circuit about to exceed ORCIRC_MAX_MIDDLE_CELLS? */
   if ((circ->n_chan != NULL) && CIRCUIT_IS_ORCIRC(circ)) {
     orcirc = TO_OR_CIRCUIT(circ);
@@ -2585,8 +2618,15 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
       }
     }
   }
+#endif
 
   cell_queue_append_packed_copy(queue, cell, chan->wide_circ_ids, 1);
+
+  if (PREDICT_UNLIKELY(cell_queues_check_size())) {
+    /* We ran the OOM handler */
+    if (circ->marked_for_close)
+      return;
+  }
 
   /* If we have too many cells on the circuit, we should stop reading from
    * the edge streams for a while. */
